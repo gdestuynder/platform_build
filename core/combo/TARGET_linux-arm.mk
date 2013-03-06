@@ -102,13 +102,14 @@ android_config_h := $(call select-android-config-h,linux-arm)
 arch_include_dir := $(dir $(android_config_h))
 
 TARGET_GLOBAL_CFLAGS += \
-			-msoft-float -fpic \
+			-msoft-float -fPIC \
 			-ffunction-sections \
 			-fdata-sections \
 			-funwind-tables \
 			-fstack-protector \
 			-Wa,--noexecstack \
 			-Werror=format-security \
+			-D_FORTIFY_SOURCE=1 \
 			-fno-short-enums \
 			$(arch_variant_cflags) \
 			-include $(android_config_h) \
@@ -135,6 +136,9 @@ TARGET_GLOBAL_CFLAGS += -Wno-psabi
 
 TARGET_GLOBAL_LDFLAGS += \
 			-Wl,-z,noexecstack \
+			-Wl,-z,relro \
+			-Wl,-z,now \
+			-Wl,--warn-shared-textrel \
 			-Wl,--icf=safe \
 			$(arch_variant_ldflags)
 
@@ -268,9 +272,9 @@ $(hide) $(PRIVATE_CXX) \
 endef
 
 define transform-o-to-executable-inner
-$(hide) $(PRIVATE_CXX) -nostdlib -Bdynamic -Wl,-T,$(BUILD_SYSTEM)/armelf.x \
+$(hide) $(PRIVATE_CXX) -nostdlib -Bdynamic -fPIE -pie \
 	-Wl,-dynamic-linker,/system/bin/linker \
-    -Wl,--gc-sections \
+        -Wl,--gc-sections \
 	-Wl,-z,nocopyreloc \
 	-o $@ \
 	$(TARGET_GLOBAL_LD_DIRS) \
